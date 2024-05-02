@@ -1,0 +1,103 @@
+<html>
+<head>
+<title>train.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #808080;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #cc7832;}
+.s3 { color: #6897bb;}
+.s4 { color: #6a8759;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+train.py</font>
+</center></td></tr></table>
+<pre><span class="s0"># 导入PyTorch库</span>
+<span class="s2">import </span><span class="s1">torch</span>
+<span class="s2">import </span><span class="s1">torch.nn </span><span class="s2">as </span><span class="s1">nn</span>
+<span class="s2">import </span><span class="s1">torch.optim </span><span class="s2">as </span><span class="s1">optim</span>
+<span class="s2">import </span><span class="s1">torchvision</span>
+<span class="s2">import </span><span class="s1">torchvision.transforms </span><span class="s2">as </span><span class="s1">transforms</span>
+<span class="s2">from </span><span class="s1">torch.utils.data </span><span class="s2">import </span><span class="s1">DataLoader</span>
+
+<span class="s0"># 定义LeNet-5架构的神经网络类</span>
+<span class="s2">class </span><span class="s1">LeNet5(nn.Module):</span>
+    <span class="s2">def </span><span class="s1">__init__(self):</span>
+        <span class="s1">super(LeNet5</span><span class="s2">, </span><span class="s1">self).__init__()</span>
+        <span class="s0"># 第一卷积层：输入1通道（灰度图像），输出6通道，卷积核大小为5x5</span>
+        <span class="s1">self.conv1 = nn.Conv2d(</span><span class="s3">1</span><span class="s2">, </span><span class="s3">6</span><span class="s2">, </span><span class="s1">kernel_size=</span><span class="s3">5</span><span class="s1">)</span>
+        <span class="s0"># 第一池化层：最大池化，池化窗口大小为2x2，步幅为2</span>
+        <span class="s1">self.pool1 = nn.MaxPool2d(kernel_size=</span><span class="s3">2</span><span class="s2">, </span><span class="s1">stride=</span><span class="s3">2</span><span class="s1">)</span>
+        <span class="s0"># 第二卷积层：输入6通道，输出16通道，卷积核大小为5x5</span>
+        <span class="s1">self.conv2 = nn.Conv2d(</span><span class="s3">6</span><span class="s2">, </span><span class="s3">16</span><span class="s2">, </span><span class="s1">kernel_size=</span><span class="s3">5</span><span class="s1">)</span>
+        <span class="s0"># 第二池化层：最大池化，池化窗口大小为2x2，步幅为2</span>
+        <span class="s1">self.pool2 = nn.MaxPool2d(kernel_size=</span><span class="s3">2</span><span class="s2">, </span><span class="s1">stride=</span><span class="s3">2</span><span class="s1">)</span>
+        <span class="s0"># 第一个全连接层：输入维度是16*4*4，输出维度是120</span>
+        <span class="s1">self.fc1 = nn.Linear(</span><span class="s3">16 </span><span class="s1">* </span><span class="s3">4 </span><span class="s1">* </span><span class="s3">4</span><span class="s2">, </span><span class="s3">120</span><span class="s1">)</span>
+        <span class="s0"># 第二个全连接层：输入维度是120，输出维度是84</span>
+        <span class="s1">self.fc2 = nn.Linear(</span><span class="s3">120</span><span class="s2">, </span><span class="s3">84</span><span class="s1">)</span>
+        <span class="s0"># 第三个全连接层：输入维度是84，输出维度是10，对应10个类别</span>
+        <span class="s1">self.fc3 = nn.Linear(</span><span class="s3">84</span><span class="s2">, </span><span class="s3">10</span><span class="s1">)</span>
+
+    <span class="s2">def </span><span class="s1">forward(self</span><span class="s2">, </span><span class="s1">x):</span>
+        <span class="s0"># 前向传播函数定义网络的数据流向</span>
+        <span class="s1">x = self.pool1(torch.relu(self.conv1(x)))</span>
+        <span class="s1">x = self.pool2(torch.relu(self.conv2(x)))</span>
+        <span class="s1">x = x.view(-</span><span class="s3">1</span><span class="s2">, </span><span class="s3">16 </span><span class="s1">* </span><span class="s3">4 </span><span class="s1">* </span><span class="s3">4</span><span class="s1">)</span>
+        <span class="s1">x = torch.relu(self.fc1(x))</span>
+        <span class="s1">x = torch.relu(self.fc2(x))</span>
+        <span class="s1">x = self.fc3(x)</span>
+        <span class="s2">return </span><span class="s1">x</span>
+
+<span class="s0"># 定义数据变换和加载MNIST数据集</span>
+<span class="s1">transform = transforms.Compose([transforms.ToTensor()</span><span class="s2">, </span><span class="s1">transforms.Normalize((</span><span class="s3">0.5</span><span class="s2">,</span><span class="s1">)</span><span class="s2">, </span><span class="s1">(</span><span class="s3">0.5</span><span class="s2">,</span><span class="s1">))])</span>
+
+<span class="s0"># 训练数据集</span>
+<span class="s1">train_dataset = torchvision.datasets.MNIST(root=</span><span class="s4">'./data'</span><span class="s2">, </span><span class="s1">train=</span><span class="s2">True, </span><span class="s1">transform=transform</span><span class="s2">, </span><span class="s1">download=</span><span class="s2">True</span><span class="s1">)</span>
+<span class="s1">train_loader = DataLoader(train_dataset</span><span class="s2">, </span><span class="s1">batch_size=</span><span class="s3">64</span><span class="s2">, </span><span class="s1">shuffle=</span><span class="s2">True</span><span class="s1">)</span>
+
+<span class="s0"># 测试数据集</span>
+<span class="s1">test_dataset = torchvision.datasets.MNIST(root=</span><span class="s4">'./data'</span><span class="s2">, </span><span class="s1">train=</span><span class="s2">False, </span><span class="s1">transform=transform</span><span class="s2">, </span><span class="s1">download=</span><span class="s2">True</span><span class="s1">)</span>
+<span class="s1">test_loader = DataLoader(test_dataset</span><span class="s2">, </span><span class="s1">batch_size=</span><span class="s3">64</span><span class="s2">, </span><span class="s1">shuffle=</span><span class="s2">False</span><span class="s1">)</span>
+
+<span class="s0"># 初始化LeNet-5模型以及定义损失函数和优化器</span>
+<span class="s1">net = LeNet5()</span>
+<span class="s1">criterion = nn.CrossEntropyLoss()  </span><span class="s0"># 交叉熵损失函数，用于分类问题</span>
+<span class="s1">optimizer = optim.Adam(net.parameters()</span><span class="s2">, </span><span class="s1">lr=</span><span class="s3">0.001</span><span class="s1">)  </span><span class="s0"># Adam优化器，学习率为0.001</span>
+
+<span class="s0"># 训练循环</span>
+<span class="s2">for </span><span class="s1">epoch </span><span class="s2">in </span><span class="s1">range(</span><span class="s3">5</span><span class="s1">):  </span><span class="s0"># 可以根据需要调整训练的轮数</span>
+    <span class="s1">running_loss = </span><span class="s3">0.0</span>
+    <span class="s2">for </span><span class="s1">i</span><span class="s2">, </span><span class="s1">data </span><span class="s2">in </span><span class="s1">enumerate(train_loader</span><span class="s2">, </span><span class="s3">0</span><span class="s1">):</span>
+        <span class="s1">inputs</span><span class="s2">, </span><span class="s1">labels = data</span>
+        <span class="s1">optimizer.zero_grad()  </span><span class="s0"># 清零梯度</span>
+
+        <span class="s1">outputs = net(inputs)  </span><span class="s0"># 前向传播</span>
+        <span class="s1">loss = criterion(outputs</span><span class="s2">, </span><span class="s1">labels)  </span><span class="s0"># 计算损失</span>
+        <span class="s1">loss.backward()  </span><span class="s0"># 反向传播，计算梯度</span>
+        <span class="s1">optimizer.step()  </span><span class="s0"># 更新权重</span>
+
+        <span class="s1">running_loss += loss.item()</span>
+    <span class="s1">print(</span><span class="s4">f&quot;Epoch </span><span class="s2">{</span><span class="s1">epoch + </span><span class="s3">1</span><span class="s2">}</span><span class="s4">, Loss: </span><span class="s2">{</span><span class="s1">running_loss / len(train_loader)</span><span class="s2">}</span><span class="s4">&quot;</span><span class="s1">)</span>
+
+<span class="s1">print(</span><span class="s4">&quot;Finished Training&quot;</span><span class="s1">)</span>
+
+<span class="s0"># 测试模型</span>
+<span class="s1">correct = </span><span class="s3">0</span>
+<span class="s1">total = </span><span class="s3">0</span>
+<span class="s2">with </span><span class="s1">torch.no_grad():</span>
+    <span class="s2">for </span><span class="s1">data </span><span class="s2">in </span><span class="s1">test_loader:</span>
+        <span class="s1">inputs</span><span class="s2">, </span><span class="s1">labels = data</span>
+        <span class="s1">outputs = net(inputs)  </span><span class="s0"># 前向传播</span>
+        <span class="s1">_</span><span class="s2">, </span><span class="s1">predicted = torch.max(outputs.data</span><span class="s2">, </span><span class="s3">1</span><span class="s1">)  </span><span class="s0"># 找到最大概率的类别</span>
+        <span class="s1">total += labels.size(</span><span class="s3">0</span><span class="s1">)</span>
+        <span class="s1">correct += (predicted == labels).sum().item()</span>
+
+<span class="s1">accuracy = </span><span class="s3">100 </span><span class="s1">* correct / total</span>
+<span class="s1">print(</span><span class="s4">f&quot;Accuracy on the test set: </span><span class="s2">{</span><span class="s1">accuracy</span><span class="s2">}</span><span class="s4">%&quot;</span><span class="s1">)</span></pre>
+</body>
+</html>
